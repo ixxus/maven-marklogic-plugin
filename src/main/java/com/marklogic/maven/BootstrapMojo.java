@@ -46,7 +46,7 @@ public class BootstrapMojo extends AbstractBootstrapMojo {
         XQueryDocumentBuilder xq = new XQueryDocumentBuilder();
         xq.append(XQueryModuleAdmin.importModule());
         String config = xq.assign("config", XQueryModuleAdmin.getConfiguration());
-        xq.assign(config, XQueryModuleAdmin.attachForest(config, XQueryModuleXDMP.database(xdbcModulesDatabase),
+        xq.assign(config, XQueryModuleAdmin.attachForest(config, getDatabase(),
                 XQueryModuleXDMP.forest(xdbcModulesDatabase)));
         xq.doReturn(XQueryModuleAdmin.saveConfiguration(config));
         return XQueryModuleXDMP.eval(xq.toString());
@@ -57,7 +57,7 @@ public class BootstrapMojo extends AbstractBootstrapMojo {
         xq.append(XQueryModuleAdmin.importModule());
         String config = xq.assign("config", XQueryModuleAdmin.getConfiguration());
         xq.assign(config, XQueryModuleAdmin.webdavServerCreate(config, xdbcName + "-WebDAV", xdbcModuleRoot,
-                xdbcPort + 1, XQueryModuleXDMP.database(xdbcModulesDatabase)));
+                xdbcPort + 1, getDatabase()));
         xq.doReturn(XQueryModuleAdmin.saveConfiguration(config));
         return XQueryModuleXDMP.eval(xq.toString());
     }
@@ -67,15 +67,18 @@ public class BootstrapMojo extends AbstractBootstrapMojo {
         xq.append(XQueryModuleAdmin.importModule());
         String config = xq.assign("config", XQueryModuleAdmin.getConfiguration());
         xq.assign(config, XQueryModuleAdmin.xdbcServerCreate(config, xdbcName, xdbcModuleRoot, xdbcPort,
-                XQueryModuleXDMP.database(xdbcModulesDatabase), XQueryModuleXDMP.database("Security")));
+                getDatabase(), XQueryModuleXDMP.database("Security")));
         xq.doReturn(XQueryModuleAdmin.saveConfiguration(config));
         return XQueryModuleXDMP.eval(xq.toString());
     }
 
+    private String getDatabase() {
+        return xdbcModulesDatabase.equalsIgnoreCase(FILE_SYSTEM) ? "'" + FILE_SYSTEM + "'" : XQueryModuleXDMP.database(xdbcModulesDatabase);
+    }
+
     protected String getBootstrapExecuteQuery() {
         XQueryDocumentBuilder sb = new XQueryDocumentBuilder();
-
-        if (!"file-system".equalsIgnoreCase(xdbcModulesDatabase)) {
+        if (!FILE_SYSTEM.equalsIgnoreCase(xdbcModulesDatabase)) {
             sb.assign("_", createDatabase());
             sb.assign("_", createForest());
             sb.assign("_", attachForestToDatabase());
@@ -115,7 +118,7 @@ public class BootstrapMojo extends AbstractBootstrapMojo {
                
         super.execute();
 
-        if (!"file-system".equalsIgnoreCase(xdbcModulesDatabase)) {
+        if (!FILE_SYSTEM.equalsIgnoreCase(xdbcModulesDatabase)) {
             this.database = xdbcModulesDatabase;
             session = getXccSession();        
             session.setTransactionMode(Session.TransactionMode.UPDATE);

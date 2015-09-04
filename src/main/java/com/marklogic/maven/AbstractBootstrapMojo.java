@@ -37,7 +37,7 @@ import org.json.XML;
 public abstract class AbstractBootstrapMojo extends AbstractMarkLogicMojo {
 
     protected static final String XQUERY_PROLOG = "xquery version '1.0-ml';\n";
-
+    protected static final String FILE_SYSTEM = "file-system";
     protected static final String ML_ADMIN_MODULE_IMPORT = "import module namespace admin = 'http://marklogic.com/xdmp/admin' at '/MarkLogic/admin.xqy';\n";
 
     /**
@@ -101,7 +101,11 @@ public abstract class AbstractBootstrapMojo extends AbstractMarkLogicMojo {
 		int actualVersion = getMarkLogicVersion();
 		getLog().info("Actual MarkLogic Version " + actualVersion);
 		this.marklogicVersion = actualVersion;
-		if (isMarkLogic7()) {
+
+        if (isMarkLogic8()) {
+            getLog().info("Bootstrapping MarkLogic 8");
+            response = executeML8BootstrapQuery(query);
+        } else if (isMarkLogic7()) {
 			getLog().info("Bootstrapping MarkLogic 7");
 			response = executeML7BootstrapQuery(query);
 			
@@ -424,6 +428,9 @@ public abstract class AbstractBootstrapMojo extends AbstractMarkLogicMojo {
         return response;
     }
 
+	protected HttpResponse executeML8BootstrapQuery(String query) throws MojoExecutionException {
+		return executeML7BootstrapQuery(query);
+	}
 
     protected HttpResponse executeML7BootstrapQuery(String query) throws MojoExecutionException {
         HttpClient httpClient = this.getHttpClient();
@@ -454,7 +461,7 @@ public abstract class AbstractBootstrapMojo extends AbstractMarkLogicMojo {
 			throw new MojoExecutionException("Error creating payload for POST bootstrap server",e);
 		}
         getLog().info("POST payload Content-Type=" + payload.getContentType());
-        
+
         httpPost.setEntity(payload);
         httpPost.setHeader("content-type","text/plain");
         try {
